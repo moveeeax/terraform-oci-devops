@@ -24,6 +24,41 @@ module "devops_project" {
 
 A runnable example lives in [`examples/basic`](examples/basic).
 
+## Notification wiring
+
+A DevOps project's `notification_config.topic_id` is accepted as an opaque string,
+so an empty or placeholder value applies cleanly and then silently notifies nobody.
+This module therefore rejects, at plan time, any `notification_topic_id` that is not
+an ONS topic OCID (`ocid1.onstopic.…`) — including an empty string, a placeholder,
+or a compartment OCID pasted into the wrong slot.
+
+The topic must already exist and be reachable from the project's compartment;
+Terraform cannot check that, so create it with `oci_ons_notification_topic` (or look
+it up with the matching data source) and pass its `id` rather than a literal string.
+
+## Input validation
+
+| Input                   | Rule                                                            |
+|-------------------------|------------------------------------------------------------------|
+| `compartment_id`        | must start with `ocid1.compartment.` or `ocid1.tenancy.`         |
+| `name`                  | 1–255 characters                                                 |
+| `notification_topic_id` | must start with `ocid1.onstopic.`                                |
+| `defined_tags`          | keys must be `namespace.key` (exactly one period)                |
+
+This module takes no credentials, tokens, or connection secrets — authentication is
+supplied entirely by the `oci` provider configuration, so nothing here needs
+`sensitive = true`.
+
+## Testing
+
+```sh
+terraform test
+```
+
+The suite in [`tests/`](tests) runs against a mocked `oci` provider, so it needs no
+OCI credentials and no network access. It requires Terraform (or OpenTofu) >= 1.7 for
+`mock_provider`; the module itself still supports >= 1.5.
+
 ## Requirements
 
 | Name      | Version  |

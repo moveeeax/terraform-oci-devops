@@ -37,6 +37,39 @@ variable "notification_topic_id" {
   }
 }
 
+variable "log_group_id" {
+  description = "OCID of an existing log group that receives the project log (OCI Logging service log, service \"devops\", category \"all\"). Null (the default) creates no log, and build and deployment output is not kept."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.log_group_id == null || can(regex("^ocid1\\.loggroup\\.", var.log_group_id))
+    error_message = "log_group_id must be a log group OCID (starting with \"ocid1.loggroup.\") or null."
+  }
+}
+
+variable "log_retention_days" {
+  description = "Retention of the project log in days. OCI accepts 30-day steps from 30 to 180. Ignored when log_group_id is null."
+  type        = number
+  default     = 30
+
+  validation {
+    condition     = contains([30, 60, 90, 120, 150, 180], var.log_retention_days)
+    error_message = "log_retention_days must be one of 30, 60, 90, 120, 150 or 180. OCI rejects anything else at apply time."
+  }
+}
+
+variable "log_display_name" {
+  description = "Display name of the project log. Null uses \"<name>_devops\", with characters other than letters, digits, _ and - replaced by _. Ignored when log_group_id is null."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.log_display_name == null || try(length(trimspace(var.log_display_name)) > 0, false)
+    error_message = "log_display_name must not be blank; leave it null to use the default."
+  }
+}
+
 variable "freeform_tags" {
   description = "Free-form tags applied to the DevOps project."
   type        = map(string)
